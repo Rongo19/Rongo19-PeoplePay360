@@ -18,22 +18,60 @@ const isHrRole = (role) => HR_ROLES.includes(role);
 // ======================================================
 
 const createTimeOffType = async (data) => {
-  const existing = await TimeOffType.findOne({
-    $or: [
-      { name: data.name.trim() },
-      { code: data.code.toUpperCase().trim() },
-    ],
+  const name = data.name.trim();
+  const code = data.code.toUpperCase().trim();
+
+  const existingName = await TimeOffType.findOne({
+    name,
   });
 
-  if (existing) {
-    throw new ApiError(409, "Time off type with this name or code already exists");
+  if (existingName) {
+    throw new ApiError(
+      409,
+      `Time off type "${name}" already exists`
+    );
   }
 
-  return TimeOffType.create({
-    ...data,
-    name: data.name.trim(),
-    code: data.code.toUpperCase().trim(),
+  const existingCode = await TimeOffType.findOne({
+    code,
   });
+
+  if (existingCode) {
+    throw new ApiError(
+      409,
+      `Time off type code "${code}" is already in use`
+    );
+  }
+
+  try {
+    return await TimeOffType.create({
+      ...data,
+      name,
+      code,
+    });
+  } catch (error) {
+    // MongoDB duplicate-key protection
+    if (error.code === 11000) {
+      const duplicateField =
+        Object.keys(error.keyPattern || {})[0];
+
+      if (duplicateField === "name") {
+        throw new ApiError(
+          409,
+          `Time off type "${name}" already exists`
+        );
+      }
+
+      if (duplicateField === "code") {
+        throw new ApiError(
+          409,
+          `Time off type code "${code}" is already in use`
+        );
+      }
+    }
+
+    throw error;
+  }
 };
 
 const getTimeOffTypes = async (includeInactive = false) => {
