@@ -4,6 +4,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middlewares/error.middleware");
 const employeeRoutes = require("./routes/employee.routes");
+const contractRoutes = require("./routes/contract.routes");
 
 const authRoutes = require("./routes/auth.routes");
 
@@ -39,6 +40,7 @@ app.get("/api/v1/health", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/employees", employeeRoutes);
+app.use("/api/v1/contracts", contractRoutes);
 
 app.use(errorHandler);
 
