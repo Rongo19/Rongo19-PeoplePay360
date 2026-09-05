@@ -1,8 +1,17 @@
 const asyncHandler = require("../utils/asyncHandler");
+
 const dashboardService = require("../services/dashboard.service");
 
+const getFilters = (req) => ({
+  month: req.query.month,
+  department: req.query.department,
+});
+
+// OVERVIEW
 const getOverview = asyncHandler(async (req, res) => {
-  const data = await dashboardService.getOverview();
+  const data = await dashboardService.getOverview(
+    getFilters(req)
+  );
 
   res.status(200).json({
     success: true,
@@ -10,8 +19,11 @@ const getOverview = asyncHandler(async (req, res) => {
   });
 });
 
+// EMPLOYEE SUMMARY
 const getEmployeeSummary = asyncHandler(async (req, res) => {
-  const data = await dashboardService.getEmployeeSummary();
+  const data = await dashboardService.getEmployeeSummary(
+    getFilters(req)
+  );
 
   res.status(200).json({
     success: true,
@@ -19,8 +31,11 @@ const getEmployeeSummary = asyncHandler(async (req, res) => {
   });
 });
 
+// PAYROLL SUMMARY
 const getPayrollSummary = asyncHandler(async (req, res) => {
-  const data = await dashboardService.getPayrollSummary();
+  const data = await dashboardService.getPayrollSummary(
+    getFilters(req)
+  );
 
   res.status(200).json({
     success: true,
@@ -28,14 +43,17 @@ const getPayrollSummary = asyncHandler(async (req, res) => {
   });
 });
 
+// RECENT PAYSLIPS
 const getRecentPayslips = asyncHandler(async (req, res) => {
   const limit = Math.min(
     Math.max(Number(req.query.limit) || 10, 1),
     50
   );
 
-  const data =
-    await dashboardService.getRecentPayslips(limit);
+  const data = await dashboardService.getRecentPayslips(
+    limit,
+    getFilters(req)
+  );
 
   res.status(200).json({
     success: true,
@@ -43,8 +61,11 @@ const getRecentPayslips = asyncHandler(async (req, res) => {
   });
 });
 
+// LEAVE SUMMARY
 const getLeaveSummary = asyncHandler(async (req, res) => {
-  const data = await dashboardService.getLeaveSummary();
+  const data = await dashboardService.getLeaveSummary(
+    getFilters(req)
+  );
 
   res.status(200).json({
     success: true,

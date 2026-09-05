@@ -3,24 +3,9 @@ const Employee = require("../models/Employee");
 const WorkingSchedule = require("../models/WorkingSchedule");
 const ApiError = require("../utils/ApiError");
 
-const calculateWorkedHours = (checkIn, checkOut) => {
-  if (!checkIn || !checkOut) {
-    return 0;
-  }
-
-  const milliseconds = checkOut.getTime() - checkIn.getTime();
-
-  if (milliseconds <= 0) {
-    throw new ApiError(
-      400,
-      "Check-out time must be after check-in time"
-    );
-  }
-
-  return Number(
-    (milliseconds / (1000 * 60 * 60)).toFixed(2)
-  );
-};
+// ======================================================
+// HELPERS
+// ======================================================
 
 const getDayName = (date) => {
   const days = [
@@ -36,8 +21,8 @@ const getDayName = (date) => {
   return days[date.getDay()];
 };
 
-const getExpectedHours = async (employeeId, date) => {
-  const schedule = await WorkingSchedule.findOne({
+const getScheduleForDate = async (employeeId, date) => {
+  return WorkingSchedule.findOne({
     employee: employeeId,
     effectiveFrom: { $lte: date },
     $or: [
@@ -46,37 +31,97 @@ const getExpectedHours = async (employeeId, date) => {
     ],
     isActive: true,
   }).sort({ effectiveFrom: -1 });
+};
 
+const getScheduleDay = (schedule, date) => {
   if (!schedule) {
-    return 0;
+    return null;
   }
 
   const dayName = getDayName(date);
 
-  const workingDay = schedule.weeklySchedule.find(
-    (day) => day.day === dayName
+  return (
+    schedule.weeklySchedule.find(
+      (day) => day.day === dayName
+    ) || null
   );
+};
 
-  if (!workingDay || !workingDay.isWorkingDay) {
+const calculateWorkedHours = (
+  checkIn,
+  checkOut,
+  breakMinutes = 0
+) => {
+  if (!checkIn || !checkOut) {
+    return 0;
+  }
+
+  const milliseconds =
+    checkOut.getTime() - checkIn.getTime();
+
+  if (milliseconds <= 0) {
+    throw new ApiError(
+      400,
+      "Check-out time must be after check-in time"
+    );
+  }
+
+  const elapsedHours =
+    milliseconds / (1000 * 60 * 60);
+
+  const breakHours =
+    Number(breakMinutes || 0) / 60;
+
+  return Number(
+    Math.max(0, elapsedHours - breakHours).toFixed(2)
+  );
+};
+
+const getExpectedHours = async (
+  employeeId,
+  date
+) => {
+  const schedule =
+    await getScheduleForDate(
+      employeeId,
+      date
+    );
+
+  const workingDay =
+    getScheduleDay(schedule, date);
+
+  if (
+    !workingDay ||
+    !workingDay.isWorkingDay
+  ) {
     return 0;
   }
 
   return workingDay.expectedHours || 0;
 };
 
+// ======================================================
+// CREATE ATTENDANCE
+// ======================================================
+
 const createAttendance = async (data) => {
-  const employee = await Employee.findById(data.employee);
+  const employee =
+    await Employee.findById(data.employee);
 
   if (!employee) {
-    throw new ApiError(404, "Employee not found");
+    throw new ApiError(
+      404,
+      "Employee not found"
+    );
   }
 
   const date = new Date(data.date);
 
-  const existingAttendance = await Attendance.findOne({
-    employee: data.employee,
-    date,
-  });
+  const existingAttendance =
+    await Attendance.findOne({
+      employee: data.employee,
+      date,
+    });
 
   if (existingAttendance) {
     throw new ApiError(
@@ -93,21 +138,49 @@ const createAttendance = async (data) => {
     ? new Date(data.checkOut)
     : null;
 
-  const workedHours = calculateWorkedHours(
-    checkIn,
-    checkOut
-  );
+  // Get employee's schedule for this date
+  const schedule =
+    await getScheduleForDate(
+      data.employee,
+      date
+    );
 
+  const workingDay =
+    getScheduleDay(schedule, date);
+
+  const scheduleExpectedHours =
+    workingDay?.isWorkingDay
+      ? workingDay.expectedHours || 0
+      : 0;
+
+  const breakMinutes =
+    workingDay?.isWorkingDay
+      ? workingDay.breakMinutes || 0
+      : 0;
+
+  // Calculate actual worked hours AFTER break
+  const workedHours =
+    calculateWorkedHours(
+      checkIn,
+      checkOut,
+      breakMinutes
+    );
+
+  // Respect manually supplied expectedHours,
+  // otherwise use schedule value.
   const expectedHours =
     data.expectedHours !== undefined
       ? data.expectedHours
-      : await getExpectedHours(data.employee, date);
+      : scheduleExpectedHours;
 
   let status = data.status;
 
   if (!status) {
     if (!checkIn && !checkOut) {
-      status = expectedHours > 0 ? "ABSENT" : "WEEKEND";
+      status =
+        expectedHours > 0
+          ? "ABSENT"
+          : "WEEKEND";
     } else if (
       expectedHours > 0 &&
       workedHours < expectedHours / 2
@@ -118,19 +191,24 @@ const createAttendance = async (data) => {
     }
   }
 
-  const attendance = await Attendance.create({
-    employee: data.employee,
-    date,
-    checkIn,
-    checkOut,
-    workedHours,
-    expectedHours,
-    status,
-    notes: data.notes || null,
-  });
+  const attendance =
+    await Attendance.create({
+      employee: data.employee,
+      date,
+      checkIn,
+      checkOut,
+      workedHours,
+      expectedHours,
+      status,
+      notes: data.notes || null,
+    });
 
   return attendance;
 };
+
+// ======================================================
+// GET ATTENDANCE
+// ======================================================
 
 const getAttendances = async ({
   employee,
@@ -152,46 +230,70 @@ const getAttendances = async ({
     filter.date = {};
 
     if (startDate) {
-      filter.date.$gte = new Date(startDate);
+      filter.date.$gte =
+        new Date(startDate);
     }
 
     if (endDate) {
-      filter.date.$lte = new Date(endDate);
+      filter.date.$lte =
+        new Date(endDate);
     }
   }
 
-  const attendances = await Attendance.find(filter)
-    .populate(
-      "employee",
-      "employeeCode firstName lastName department designation"
-    )
-    .sort({ date: -1 });
+  const attendances =
+    await Attendance.find(filter)
+      .populate(
+        "employee",
+        "employeeCode firstName lastName department designation"
+      )
+      .sort({ date: -1 });
 
   return attendances;
 };
 
-const getAttendanceById = async (attendanceId) => {
-  const attendance = await Attendance.findById(
-    attendanceId
-  ).populate(
-    "employee",
-    "employeeCode firstName lastName department designation"
-  );
+// ======================================================
+// GET ATTENDANCE BY ID
+// ======================================================
+
+const getAttendanceById = async (
+  attendanceId
+) => {
+  const attendance =
+    await Attendance.findById(
+      attendanceId
+    ).populate(
+      "employee",
+      "employeeCode firstName lastName department designation"
+    );
 
   if (!attendance) {
-    throw new ApiError(404, "Attendance record not found");
+    throw new ApiError(
+      404,
+      "Attendance record not found"
+    );
   }
 
   return attendance;
 };
 
-const updateAttendance = async (attendanceId, data) => {
-  const attendance = await Attendance.findById(
-    attendanceId
-  );
+// ======================================================
+// UPDATE ATTENDANCE
+// ======================================================
+
+const updateAttendance = async (
+  attendanceId,
+  data
+) => {
+  const attendance =
+    await Attendance.findById(
+      attendanceId
+    );
 
   if (!attendance) {
-    throw new ApiError(404, "Attendance record not found");
+    throw new ApiError(
+      404,
+      "Attendance record not found"
+    );
   }
 
   if (data.checkIn !== undefined) {
@@ -207,7 +309,16 @@ const updateAttendance = async (attendanceId, data) => {
   }
 
   if (data.expectedHours !== undefined) {
-    attendance.expectedHours = data.expectedHours;
+    attendance.expectedHours =
+      data.expectedHours;
+  } else {
+    // If expected hours weren't explicitly
+    // supplied, refresh from employee schedule.
+    attendance.expectedHours =
+      await getExpectedHours(
+        attendance.employee,
+        attendance.date
+      );
   }
 
   if (data.status !== undefined) {
@@ -218,12 +329,33 @@ const updateAttendance = async (attendanceId, data) => {
     attendance.notes = data.notes;
   }
 
-  attendance.workedHours = calculateWorkedHours(
-    attendance.checkIn,
-    attendance.checkOut
-  );
+  // Get schedule to determine break duration
+  const schedule =
+    await getScheduleForDate(
+      attendance.employee,
+      attendance.date
+    );
 
-  // Automatically determine status if not explicitly supplied
+  const workingDay =
+    getScheduleDay(
+      schedule,
+      attendance.date
+    );
+
+  const breakMinutes =
+    workingDay?.isWorkingDay
+      ? workingDay.breakMinutes || 0
+      : 0;
+
+  // Recalculate worked hours
+  attendance.workedHours =
+    calculateWorkedHours(
+      attendance.checkIn,
+      attendance.checkOut,
+      breakMinutes
+    );
+
+  // Automatically determine status
   if (data.status === undefined) {
     if (
       !attendance.checkIn &&
