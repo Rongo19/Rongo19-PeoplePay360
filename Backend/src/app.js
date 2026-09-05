@@ -11,6 +11,7 @@ const timeoffRoutes = require("./routes/timeoff.routes");
 const salaryRoutes = require("./routes/salary.routes");
 const payrunRoutes = require("./routes/payrun.routes");
 const payslipRoutes = require("./routes/payslip.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 
 const authRoutes = require("./routes/auth.routes");
 
@@ -56,6 +57,10 @@ app.use("/api/v1/timeoff", timeoffRoutes);
 app.use("/api/v1/salary", salaryRoutes);
 app.use("/api/v1/payruns", payrunRoutes);
 app.use("/api/v1/payslips", payslipRoutes);
+app.use(
+  "/api/v1/dashboard",
+  dashboardRoutes
+);
 
 app.use(errorHandler);
 
