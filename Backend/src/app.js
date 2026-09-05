@@ -9,6 +9,7 @@ const scheduleRoutes = require("./routes/schedule.routes");
 const attendanceRoutes = require("./routes/attendance.routes");
 const timeoffRoutes = require("./routes/timeoff.routes");
 const salaryRoutes = require("./routes/salary.routes");
+const payrunRoutes = require("./routes/payrun.routes");
 
 const authRoutes = require("./routes/auth.routes");
 
@@ -52,6 +53,7 @@ app.use(
 );
 app.use("/api/v1/timeoff", timeoffRoutes);
 app.use("/api/v1/salary", salaryRoutes);
+app.use("/api/v1/payruns", payrunRoutes);
 
 app.use(errorHandler);
 
