@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import DataTable from "../components/DataTable";
 
@@ -9,8 +8,6 @@ import {
 } from "../api/timeoffApi";
 
 export default function TimeOffTypes() {
-  const navigate = useNavigate();
-
   const [timeOffTypes, setTimeOffTypes] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -18,6 +15,7 @@ export default function TimeOffTypes() {
 
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [showForm, setShowForm] = useState(false);
 
@@ -46,7 +44,9 @@ export default function TimeOffTypes() {
         response.data
       );
 
-      setTimeOffTypes(response.data.data || []);
+      setTimeOffTypes(
+        response.data?.data || []
+      );
     } catch (err) {
       console.error(
         "TIME OFF TYPES ERROR:",
@@ -62,20 +62,21 @@ export default function TimeOffTypes() {
     }
   };
 
-  // ==========================================
-  // LOAD ON PAGE OPEN
-  // ==========================================
-
   useEffect(() => {
     fetchTimeOffTypes();
   }, []);
 
   // ==========================================
-  // HANDLE FORM INPUT
+  // HANDLE INPUT
   // ==========================================
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
 
     setForm((prev) => ({
       ...prev,
@@ -93,25 +94,66 @@ export default function TimeOffTypes() {
   const handleCreate = async (e) => {
     e.preventDefault();
 
+    setFormError("");
+    setSuccessMessage("");
+
+    // Basic frontend validation
+    const name = form.name.trim();
+    const code = form.code
+      .trim()
+      .toUpperCase();
+    const description =
+      form.description.trim();
+
+    if (name.length < 2) {
+      setFormError(
+        "Name must contain at least 2 characters."
+      );
+      return;
+    }
+
+    if (code.length < 2) {
+      setFormError(
+        "Code must contain at least 2 characters."
+      );
+      return;
+    }
+
     try {
       setCreating(true);
-      setFormError("");
 
       const payload = {
-        name: form.name.trim(),
-        code: form.code.trim().toUpperCase(),
-        description: form.description.trim(),
-        isPaid: form.isPaid,
-        requiresApproval: form.requiresApproval,
-        isActive: form.isActive,
+        name,
+        code,
+        description,
+        isPaid: Boolean(form.isPaid),
+        requiresApproval: Boolean(
+          form.requiresApproval
+        ),
+        isActive: Boolean(form.isActive),
       };
 
       console.log(
-        "CREATE TIME OFF TYPE:",
+        "SENDING CREATE TIME OFF TYPE:",
         payload
       );
 
-      await createTimeOffType(payload);
+      const response =
+        await createTimeOffType(payload);
+
+      console.log(
+        "CREATE TIME OFF TYPE RESPONSE:",
+        response.data
+      );
+
+      // ----------------------------------------
+      // SUCCESS
+      // ----------------------------------------
+
+      setSuccessMessage(
+        response.data?.message ||
+          "Time off type created successfully."
+      );
 
       // Reset form
       setForm({
@@ -123,20 +165,32 @@ export default function TimeOffTypes() {
         isActive: true,
       });
 
+      // Close form
       setShowForm(false);
 
-      // Refresh from MongoDB
+      // Refresh table from MongoDB
       await fetchTimeOffTypes();
+
     } catch (err) {
       console.error(
         "CREATE TIME OFF TYPE ERROR:",
         err
       );
 
-      setFormError(
-        err.response?.data?.message ||
-          "Failed to create time off type."
+      console.error(
+        "BACKEND RESPONSE:",
+        err.response?.data
       );
+
+      // Show exact backend error
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to create time off type.";
+
+      setFormError(message);
+
     } finally {
       setCreating(false);
     }
@@ -160,15 +214,15 @@ export default function TimeOffTypes() {
     {
       key: "isPaid",
       label: "Paid",
-      render: (r) =>
-        r.isPaid ? "Yes" : "No",
+      render: (row) =>
+        row.isPaid ? "Yes" : "No",
     },
 
     {
       key: "requiresApproval",
       label: "Approval",
-      render: (r) =>
-        r.requiresApproval
+      render: (row) =>
+        row.requiresApproval
           ? "Required"
           : "Not Required",
     },
@@ -176,13 +230,15 @@ export default function TimeOffTypes() {
     {
       key: "isActive",
       label: "Status",
-      render: (r) =>
-        r.isActive ? "Active" : "Inactive",
+      render: (row) =>
+        row.isActive
+          ? "Active"
+          : "Inactive",
     },
   ];
 
   // ==========================================
-  // PREPARE ROWS
+  // TABLE ROWS
   // ==========================================
 
   const rows = timeOffTypes.map((type) => ({
@@ -212,6 +268,7 @@ export default function TimeOffTypes() {
           onClick={() => {
             setShowForm((prev) => !prev);
             setFormError("");
+            setSuccessMessage("");
           }}
         >
           {showForm
@@ -219,6 +276,22 @@ export default function TimeOffTypes() {
             : "New Time Off Type"}
         </button>
       </div>
+
+      {/* ====================================== */}
+      {/* SUCCESS MESSAGE */}
+      {/* ====================================== */}
+
+      {successMessage && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 15,
+            color: "var(--success)",
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
 
       {/* ====================================== */}
       {/* CREATE FORM */}
@@ -235,10 +308,11 @@ export default function TimeOffTypes() {
 
           {formError && (
             <div
+              className="card"
               style={{
-                color: "var(--danger)",
+                marginTop: 15,
                 marginBottom: 15,
-                fontSize: 13,
+                color: "var(--danger)",
               }}
             >
               {formError}
@@ -246,6 +320,8 @@ export default function TimeOffTypes() {
           )}
 
           <form onSubmit={handleCreate}>
+            {/* NAME + CODE */}
+
             <div className="grid-2">
               <div>
                 <label className="form-label">
@@ -278,7 +354,11 @@ export default function TimeOffTypes() {
               </div>
             </div>
 
-            <div style={{ marginTop: 15 }}>
+            {/* DESCRIPTION */}
+
+            <div
+              style={{ marginTop: 15 }}
+            >
               <label className="form-label">
                 Description
               </label>
@@ -292,6 +372,8 @@ export default function TimeOffTypes() {
                 rows={3}
               />
             </div>
+
+            {/* OPTIONS */}
 
             <div
               style={{
@@ -314,7 +396,9 @@ export default function TimeOffTypes() {
                 <input
                   type="checkbox"
                   name="requiresApproval"
-                  checked={form.requiresApproval}
+                  checked={
+                    form.requiresApproval
+                  }
                   onChange={handleChange}
                 />{" "}
                 Requires Approval
@@ -331,7 +415,11 @@ export default function TimeOffTypes() {
               </label>
             </div>
 
-            <div style={{ marginTop: 20 }}>
+            {/* SUBMIT */}
+
+            <div
+              style={{ marginTop: 20 }}
+            >
               <button
                 type="submit"
                 className="btn btn-primary"
@@ -347,7 +435,7 @@ export default function TimeOffTypes() {
       )}
 
       {/* ====================================== */}
-      {/* ERROR */}
+      {/* LOAD ERROR */}
       {/* ====================================== */}
 
       {error && (
@@ -385,11 +473,6 @@ export default function TimeOffTypes() {
           <DataTable
             columns={columns}
             rows={rows}
-            onRowClick={(row) =>
-              navigate(
-                `/timeoff-types/${row.id}`
-              )
-            }
           />
         )}
       </div>
