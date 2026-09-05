@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middlewares/error.middleware");
+const employeeRoutes = require("./routes/employee.routes");
 
 const authRoutes = require("./routes/auth.routes");
 
@@ -19,7 +20,6 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(errorHandler);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -38,5 +38,8 @@ app.get("/api/v1/health", (req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/employees", employeeRoutes);
+
+app.use(errorHandler);
 
 module.exports = app;
