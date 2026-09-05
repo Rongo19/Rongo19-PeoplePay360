@@ -6,10 +6,9 @@ const errorHandler = require("./middlewares/error.middleware");
 const employeeRoutes = require("./routes/employee.routes");
 const contractRoutes = require("./routes/contract.routes");
 const scheduleRoutes = require("./routes/schedule.routes");
-const attendanceRoutes = require(
-  "./routes/attendance.routes"
-);
+const attendanceRoutes = require("./routes/attendance.routes");
 const timeoffRoutes = require("./routes/timeoff.routes");
+const salaryRoutes = require("./routes/salary.routes");
 
 const authRoutes = require("./routes/auth.routes");
 
@@ -52,6 +51,7 @@ app.use(
   attendanceRoutes
 );
 app.use("/api/v1/timeoff", timeoffRoutes);
+app.use("/api/v1/salary", salaryRoutes);
 
 app.use(errorHandler);
 
