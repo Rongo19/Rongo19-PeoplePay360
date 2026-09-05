@@ -31,11 +31,30 @@ const downloadPayslipPDF = asyncHandler(async (req, res) => {
     req.params.id
   );
 
-  generatePayslipPDF(payslip, res);
+  await generatePayslipPDF(payslip, res);
+});
+
+const sendPayslipEmail = asyncHandler(async (req, res) => {
+  const payslip =
+    await payslipService.sendPayslipEmailById(
+      req.params.id
+    );
+
+  res.status(200).json({
+    success: true,
+    message: "Payslip emailed successfully",
+    data: {
+      payslipId: payslip._id,
+      employee: payslip.employee,
+      emailSent: payslip.emailSent,
+      emailSentAt: payslip.emailSentAt,
+    },
+  });
 });
 
 module.exports = {
   getPayslips,
   getPayslipById,
   downloadPayslipPDF,
+  sendPayslipEmail,
 };

@@ -14,7 +14,6 @@ const PAYROLL_ROLES = [
   "ADMIN",
 ];
 
-// Get all payslips
 router.get(
   "/",
   protect,
@@ -22,20 +21,25 @@ router.get(
   controller.getPayslips
 );
 
-// Get single payslip
-router.get(
-  "/:id",
-  protect,
-  authorize(...PAYROLL_ROLES),
-  controller.getPayslipById
-);
-
-// Download payslip PDF
 router.get(
   "/:id/pdf",
   protect,
   authorize(...PAYROLL_ROLES),
   controller.downloadPayslipPDF
+);
+
+router.post(
+  "/:id/send-email",
+  protect,
+  authorize(...PAYROLL_ROLES),
+  controller.sendPayslipEmail
+);
+
+router.get(
+  "/:id",
+  protect,
+  authorize(...PAYROLL_ROLES),
+  controller.getPayslipById
 );
 
 module.exports = router;
