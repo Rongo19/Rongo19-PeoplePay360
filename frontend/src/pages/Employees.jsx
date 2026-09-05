@@ -198,6 +198,9 @@ useEffect(() => {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
+        phone: form.phone,
+        DOB: form.DOB,
+        Gender: form.Gender,
         department: form.department,
         designation: form.designation,
         dateOfJoining: form.dateOfJoining,
@@ -225,6 +228,9 @@ useEffect(() => {
         jobPosition: employee.designation || "-",
         department: employee.department || "-",
         manager: employee.manager || "-",
+        phone: employee.phone || "-",
+        DOB: employee.DOB || "-",
+        Gender: employee.Gender || "-",
         workLocation:
           employee.address?.city || "-",
         status:
@@ -246,6 +252,9 @@ useEffect(() => {
         email: "",
         employeeCode: "",
         dateOfJoining: "",
+        phone: "",
+        DOB: "",
+        Gender: "",
       });
 
       setShowForm(false);
@@ -365,6 +374,16 @@ useEffect(() => {
             </div>
 
             <div className="field">
+              <label>Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="field">
               <label>Employee Code *</label>
               <input
                 name="employeeCode"
@@ -419,6 +438,31 @@ useEffect(() => {
                 onChange={handleChange}
               />
             </div>
+
+            <div className="field">
+              <label>Date of Birth</label>
+              <input
+                type="date"
+                name="DOB"
+                value={form.DOB}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="field">
+              <label>Gender</label>
+              <select
+                name="Gender"
+                value={form.Gender}
+                onChange={handleChange}
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
 
           </div>
 
