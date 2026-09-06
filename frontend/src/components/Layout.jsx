@@ -48,7 +48,7 @@ export default function Layout({ children }) {
           </NavLink>
         ))}
         <span className="topnav-spacer" />
-        <span className="topnav-user">{localStorage.getItem("userName") || "Guest"}</span>
+        <span className="topnav-user">{localStorage.getItem("userName") || "admin"}</span>
         <button className="btn btn-sm" style={{ marginLeft: 10 }} onClick={() => navigate("/")}>
           Sign out
         </button>
