@@ -1,0 +1,76 @@
+export const ROLES = {
+  ADMIN: "ADMIN",
+  HR_MANAGER: "HR_MANAGER",
+  HR_PAYROLL_MANAGER: "HR_PAYROLL_MANAGER",
+  HR_PAYROLL_USER: "HR_PAYROLL_USER",
+  EMPLOYEE: "EMPLOYEE",
+};
+
+export const PERMISSIONS = {
+  users: [
+    ROLES.ADMIN,
+  ],
+
+  employees: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+
+  contracts: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+
+  schedules: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+
+  attendance: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+    ROLES.HR_PAYROLL_USER,
+    ROLES.EMPLOYEE,
+  ],
+
+  timeoff: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+    ROLES.HR_PAYROLL_USER,
+    ROLES.EMPLOYEE,
+  ],
+
+  allocations: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+
+  timeoffTypes: [
+    ROLES.ADMIN,
+    ROLES.HR_MANAGER,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+
+  payroll: [
+    ROLES.ADMIN,
+    ROLES.HR_PAYROLL_MANAGER,
+    ROLES.HR_PAYROLL_USER,
+    ROLES.EMPLOYEE,
+  ],
+
+  salaryStructures: [
+    ROLES.ADMIN,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+
+  salaryRules: [
+    ROLES.ADMIN,
+    ROLES.HR_PAYROLL_MANAGER,
+  ],
+};
