@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/authApi";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -39,6 +40,7 @@ export default function Login() {
 
   return (
     <div className="login-screen">
+      <ThemeToggle className="login-theme-toggle" />
       <div className="login-box">
         <h1>Welcome back</h1>
         <p className="sub">Sign in to enter the HR and Payroll application</p>

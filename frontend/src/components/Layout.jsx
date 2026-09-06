@@ -1,4 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle";
 
 const TOP_LINKS = [
   { to: "/employees", label: "Employees" },
@@ -48,6 +49,7 @@ export default function Layout({ children }) {
           </NavLink>
         ))}
         <span className="topnav-spacer" />
+        <ThemeToggle className="topnav-theme-toggle" />
         <span className="topnav-user">{localStorage.getItem("userName") || "admin"}</span>
         <button className="btn btn-sm" style={{ marginLeft: 10 }} onClick={() => navigate("/")}>
           Sign out
@@ -69,7 +71,11 @@ export default function Layout({ children }) {
             ))}
           </div>
         )}
-        <div className="page-content">{children}</div>
+        <div className="page-content">
+          <div className="page-content-inner" key={location.pathname}>
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );
